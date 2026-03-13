@@ -116,14 +116,20 @@ module "eks" {
     owner       = "naylor.robinson"
   }
 }
+# INTENTIONAL VIOLATION — security group open to the internet on port 22
+# This should be caught and blocked by networking.rego
+resource "aws_security_group" "bad_example" {
+  name        = "bad-sg-open-ssh"
+  description = "Intentionally bad security group for demo"
+  vpc_id      = module.vpc.vpc_id
 
-# INTENTIONAL VIOLATION — unencrypted S3 bucket with missing tags
-# This should be caught and blocked by OPA
-# INTENTIONAL VIOLATION — missing required tags
-resource "aws_s3_bucket" "bad_example" {
-  bucket = "platform-demo-bad-bucket-nkr-2026"
-  tags = {
-    Name = "bad-bucket"
-    # Missing: team, environment, owner — will be caught by tagging.rego
+  ingress {
+    description = "SSH open to the world - intentional violation"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
+
+
 }
