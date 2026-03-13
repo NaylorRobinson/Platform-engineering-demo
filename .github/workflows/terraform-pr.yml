@@ -88,7 +88,8 @@ jobs:
         id: opa
         working-directory: ${{ github.workspace }}
         run: |
-          
+           conftest test tfplan.json --policy ./policies --output json --all-namespaces > opa_results.json 2>&1 || true
+           echo "OPA_EXIT_CODE=$?" >> $GITHUB_ENV
 
       # Step 10: Post OPA results as a comment on the PR
       # The developer sees exactly which policies passed or failed without opening the logs
@@ -138,8 +139,10 @@ jobs:
       - name: Fail if OPA violations found
         run: |
           # Re-run conftest without || true so the job fails with a red X
+          echo "=== POLICY FILES FOUND ==="
+          find ./policies -name "*.rego" -type f
           echo "=== RAW OPA OUTPUT ==="
-          conftest test tfplan.json --policy ./policies --output json
-          echo "=== END OPA OUTPUT ==="
-          conftest test tfplan.json --policy ./policies
+          conftest test tfplan.json --policy ./policies --output json --all-namespaces
+          echo "=== END ==="
+          conftest test tfplan.json --policy ./policies --all-namespaces
         working-directory: ${{ github.workspace }}
