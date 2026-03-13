@@ -39,3 +39,6 @@ Thumbs.db
 
 # ── OPA results output ─────────────────────────────────────────
 opa_results.json
+
+# ── Terraform variable files ───────────────────────────────────
+*.tfvars
