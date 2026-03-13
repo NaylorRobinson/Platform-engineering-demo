@@ -1,0 +1,41 @@
+# ── Terraform ──────────────────────────────────────────────────
+# Local Terraform working directory — contains provider binaries and plugins
+.terraform/
+
+# Terraform state files — never commit, state lives in S3
+*.tfstate
+*.tfstate.backup
+
+# Terraform plan files — binary and JSON versions
+*.tfplan
+tfplan.binary
+tfplan.json
+
+# Terraform lock file
+.terraform.lock.hcl
+
+# ── Python ─────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+
+# Environment variables file — contains API keys, never commit
+.env
+
+# ── AWS ────────────────────────────────────────────────────────
+.aws/
+*.pem
+*.key
+
+# ── OS Files ───────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Editor ─────────────────────────────────────────────────────
+.vscode/
+.idea/
+
+# ── OPA results output ─────────────────────────────────────────
+opa_results.json

@@ -1,0 +1,143 @@
+# ══════════════════════════════════════════════════════════════
+# GITHUB ACTIONS — terraform-pr.yml
+# Runs automatically on every pull request targeting main.
+# Steps: Terraform init → plan → OPA validate → comment on PR
+# A failed OPA check blocks the PR with a red X.
+# ══════════════════════════════════════════════════════════════
+
+name: Terraform PR Validation
+
+# Trigger this workflow when a PR is opened, updated, or reopened
+on:
+  pull_request:
+    branches: [ main ]
+    # Only run when these paths are changed — avoids unnecessary runs
+    paths:
+      - 'terraform/**'
+      - 'policies/**'
+
+jobs:
+  validate:
+    name: Terraform Plan + OPA Policy Check
+    runs-on: ubuntu-latest
+
+    # Give the job permission to write PR comments
+    permissions:
+      contents: read
+      pull-requests: write
+
+    # Set the working directory for all Terraform steps
+    defaults:
+      run:
+        working-directory: terraform/environments/dev
+
+    steps:
+      # Step 1: Check out the code from the pull request branch
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Configure AWS credentials from GitHub Secrets
+      # These were added in Phase 1 Step 1.6 of the build guide
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # Step 3: Install Terraform at the specified version
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.0
+
+      # Step 4: Initialize Terraform — downloads providers, connects to S3 backend
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      # Step 5: Validate Terraform syntax — catches HCL errors before planning
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate
+
+      # Step 6: Generate the Terraform plan and save as binary
+      # -out saves the plan so we can convert it to JSON in the next step
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -out=tfplan.binary
+        # Don't fail the job here — we want to report results in the PR comment
+        continue-on-error: true
+
+      # Step 7: Convert the binary plan to JSON so OPA can read it
+      # The plan binary is not human-readable — JSON is what conftest needs
+      - name: Convert plan to JSON
+        run: terraform show -json tfplan.binary > ../../../tfplan.json
+
+      # Step 8: Install Conftest — the CLI wrapper around OPA
+      - name: Install Conftest
+        run: |
+          wget -q https://github.com/open-policy-agent/conftest/releases/download/v0.46.0/conftest_0.46.0_Linux_x86_64.tar.gz
+          tar xzf conftest_0.46.0_Linux_x86_64.tar.gz
+          sudo mv conftest /usr/local/bin/conftest
+
+      # Step 9: Run OPA policies against the Terraform plan JSON
+      # --output json formats results for the PR comment step
+      # || true prevents the step from failing so we can post the comment first
+      - name: Run OPA policy checks
+        id: opa
+        working-directory: ${{ github.workspace }}
+        run: |
+          conftest test tfplan.json --policy ./policies --output json > opa_results.json 2>&1 || true
+          echo "OPA_EXIT_CODE=$?" >> $GITHUB_ENV
+
+      # Step 10: Post OPA results as a comment on the PR
+      # The developer sees exactly which policies passed or failed without opening the logs
+      - name: Comment OPA results on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let body = '';
+            
+            try {
+              // Read the OPA results JSON file
+              const raw = fs.readFileSync('opa_results.json', 'utf8');
+              const results = JSON.parse(raw);
+              
+              // Collect all failure messages across all policy files
+              const failures = [];
+              results.forEach(r => {
+                if (r.failures) {
+                  r.failures.forEach(f => failures.push(f.msg));
+                }
+              });
+              
+              if (failures.length === 0) {
+                // All policies passed — green checkmark
+                body = '## ✅ OPA Policy Check Passed\n\nAll compliance policies satisfied. This PR is ready for platform engineer review.';
+              } else {
+                // Policies failed — list every violation for the developer to fix
+                body = '## ❌ OPA Policy Check Failed\n\nThis PR has **' + failures.length + ' policy violation(s)** that must be fixed before it can be merged:\n\n';
+                failures.forEach(f => { body += '- ' + f + '\n'; });
+                body += '\n> Fix the violations above and push a new commit to re-run the checks.';
+              }
+            } catch (e) {
+              body = '## ⚠️ OPA Check Error\n\nCould not parse OPA results. Check the Actions log for details.';
+            }
+            
+            // Post the comment on the PR
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+      # Step 11: Fail the job if OPA found violations
+      # This step runs AFTER the comment is posted so the developer has context
+      - name: Fail if OPA violations found
+        run: |
+          # Re-run conftest without || true so the job fails with a red X
+          conftest test tfplan.json --policy ./policies
+        working-directory: ${{ github.workspace }}
