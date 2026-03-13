@@ -116,3 +116,9 @@ module "eks" {
     owner       = "naylor.robinson"
   }
 }
+
+# INTENTIONAL VIOLATION — unencrypted S3 bucket with missing tags
+# This should be caught and blocked by OPA
+resource "aws_s3_bucket" "bad_example" {
+  bucket = "platform-demo-bad-bucket-nkr-2026"
+}
