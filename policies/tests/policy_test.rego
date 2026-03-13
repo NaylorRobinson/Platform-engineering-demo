@@ -9,7 +9,7 @@ package aws.tests
 # ── TEST: Encryption policy catches unencrypted S3 bucket ─────
 # This mock Terraform plan represents an S3 bucket with NO encryption
 # The encryption policy should deny this with a violation message
-test_encryption_violation {
+test_encryption_violation if {
   # Build a mock Terraform plan that has an unencrypted S3 bucket
   mock_plan := {
     "resource_changes": [{
@@ -32,7 +32,7 @@ test_encryption_violation {
 }
 
 # ── TEST: Encryption policy passes compliant S3 bucket ────────
-test_encryption_compliant {
+test_encryption_compliant if {
   mock_plan := {
     "resource_changes": [{
       "address": "aws_s3_bucket.good_bucket",
@@ -54,7 +54,7 @@ test_encryption_compliant {
 }
 
 # ── TEST: Tagging policy catches missing tags ─────────────────
-test_tagging_violation {
+test_tagging_violation if {
   mock_plan := {
     "resource_changes": [{
       "address": "aws_s3_bucket.untagged_bucket",
@@ -74,7 +74,7 @@ test_tagging_violation {
 }
 
 # ── TEST: Networking policy catches open SSH port ─────────────
-test_networking_ssh_violation {
+test_networking_ssh_violation if {
   mock_plan := {
     "resource_changes": [{
       "address": "aws_security_group.bad_sg",
@@ -101,7 +101,7 @@ test_networking_ssh_violation {
 }
 
 # ── TEST: IAM policy catches wildcard action ──────────────────
-test_iam_wildcard_violation {
+test_iam_wildcard_violation if {
   mock_plan := {
     "resource_changes": [{
       "address": "aws_iam_policy.bad_policy",

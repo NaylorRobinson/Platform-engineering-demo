@@ -4,7 +4,7 @@
 # ══════════════════════════════════════════════════════════════
 package aws.encryption
 
-deny[msg] {
+deny contains msg if {
   # Loop over every resource change in the Terraform plan
   resource := input.resource_changes[_]
 

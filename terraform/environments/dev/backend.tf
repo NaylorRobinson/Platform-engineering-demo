@@ -8,7 +8,7 @@
 terraform {
   backend "s3" {
     # The S3 bucket that holds Terraform state — must already exist (created in Phase 2)
-    bucket = "platform-demo-tfstate-YOUR_NAME"
+    bucket = "platform-demo-tfstate-nkr-2026"
 
     # The path inside the bucket where this environment's state file is stored
     key = "dev/terraform.tfstate"

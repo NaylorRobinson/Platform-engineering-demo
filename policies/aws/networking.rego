@@ -8,7 +8,7 @@ package aws.networking
 # Ports that must never be open to the internet
 sensitive_ports := {22, 3389}
 
-deny[msg] {
+deny contains msg if {
   resource := input.resource_changes[_]
   resource.type == "aws_security_group"
   resource.change.actions[_] == "create"

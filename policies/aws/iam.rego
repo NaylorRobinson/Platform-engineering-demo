@@ -6,7 +6,7 @@
 package aws.iam
 
 # Rule 1: Catches wildcard when Action is a single string
-deny[msg] {
+deny contains msg if {
   resource := input.resource_changes[_]
   resource.type == "aws_iam_policy"
   resource.change.actions[_] == "create"
@@ -26,7 +26,7 @@ deny[msg] {
 }
 
 # Rule 2: Catches wildcard when Action is an array
-deny[msg] {
+deny contains msg if {
   resource := input.resource_changes[_]
   resource.type == "aws_iam_policy"
   resource.change.actions[_] == "create"

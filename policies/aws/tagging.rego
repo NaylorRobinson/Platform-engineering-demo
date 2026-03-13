@@ -7,7 +7,7 @@ package aws.tagging
 # The set of tags every resource must have for cost allocation and ownership
 required_tags := {"team", "environment", "owner"}
 
-deny[msg] {
+deny contains msg if {
   resource := input.resource_changes[_]
   resource.change.actions[_] == "create"
   resource.change.after != null
