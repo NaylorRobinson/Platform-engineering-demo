@@ -88,9 +88,7 @@ jobs:
         id: opa
         working-directory: ${{ github.workspace }}
         run: |
-          cat tfplan.json | python3 -c "import json,sys; plan=json.load(sys.stdin); [print(r['type'], r['address']) for r in plan.get('resource_changes',[])]"
-          conftest test tfplan.json --policy ./policies --output json > opa_results.json 2>&1 || true
-          echo "OPA_EXIT_CODE=$?" >> $GITHUB_ENV
+          
 
       # Step 10: Post OPA results as a comment on the PR
       # The developer sees exactly which policies passed or failed without opening the logs
@@ -140,5 +138,8 @@ jobs:
       - name: Fail if OPA violations found
         run: |
           # Re-run conftest without || true so the job fails with a red X
+          echo "=== RAW OPA OUTPUT ==="
+          conftest test tfplan.json --policy ./policies --output json
+          echo "=== END OPA OUTPUT ==="
           conftest test tfplan.json --policy ./policies
         working-directory: ${{ github.workspace }}
