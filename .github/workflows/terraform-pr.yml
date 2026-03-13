@@ -88,6 +88,7 @@ jobs:
         id: opa
         working-directory: ${{ github.workspace }}
         run: |
+          cat tfplan.json | python3 -c "import json,sys; plan=json.load(sys.stdin); [print(r['type'], r['address']) for r in plan.get('resource_changes',[])]"
           conftest test tfplan.json --policy ./policies --output json > opa_results.json 2>&1 || true
           echo "OPA_EXIT_CODE=$?" >> $GITHUB_ENV
 
