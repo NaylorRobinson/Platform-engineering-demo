@@ -119,6 +119,11 @@ module "eks" {
 
 # INTENTIONAL VIOLATION — unencrypted S3 bucket with missing tags
 # This should be caught and blocked by OPA
+# INTENTIONAL VIOLATION — missing required tags
 resource "aws_s3_bucket" "bad_example" {
   bucket = "platform-demo-bad-bucket-nkr-2026"
+  tags = {
+    Name = "bad-bucket"
+    # Missing: team, environment, owner — will be caught by tagging.rego
+  }
 }
