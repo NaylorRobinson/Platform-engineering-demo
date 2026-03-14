@@ -77,8 +77,8 @@ jobs:
       # Step 8: Install Conftest — the CLI wrapper around OPA
       - name: Install Conftest
         run: |
-          wget -q https://github.com/open-policy-agent/conftest/releases/download/v0.46.0/conftest_0.46.0_Linux_x86_64.tar.gz
-          tar xzf conftest_0.46.0_Linux_x86_64.tar.gz
+          wget -q https://github.com/open-policy-agent/conftest/releases/download/v0.66.0/conftest_0.66.0_Linux_x86_64.tar.gz
+          tar xzf conftest_0.66.0_Linux_x86_64.tar.gz
           sudo mv conftest /usr/local/bin/conftest
 
       # Step 9: Run OPA policies against the Terraform plan JSON
@@ -88,8 +88,8 @@ jobs:
         id: opa
         working-directory: ${{ github.workspace }}
         run: |
-          conftest test tfplan.json --policy ./policies --output json > opa_results.json 2>&1 || true
-          echo "OPA_EXIT_CODE=$?" >> $GITHUB_ENV
+           conftest test tfplan.json --policy ./policies --output json --all-namespaces > opa_results.json 2>&1 || true
+           echo "OPA_EXIT_CODE=$?" >> $GITHUB_ENV
 
       # Step 10: Post OPA results as a comment on the PR
       # The developer sees exactly which policies passed or failed without opening the logs
@@ -139,5 +139,10 @@ jobs:
       - name: Fail if OPA violations found
         run: |
           # Re-run conftest without || true so the job fails with a red X
-          conftest test tfplan.json --policy ./policies
+          echo "=== POLICY FILES FOUND ==="
+          find ./policies -name "*.rego" -type f
+          echo "=== RAW OPA OUTPUT ==="
+          conftest test tfplan.json --policy ./policies --output json --all-namespaces
+          echo "=== END ==="
+          conftest test tfplan.json --policy ./policies --all-namespaces
         working-directory: ${{ github.workspace }}
