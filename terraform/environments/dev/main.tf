@@ -116,20 +116,3 @@ module "eks" {
     owner       = "naylor.robinson"
   }
 }
-# INTENTIONAL VIOLATION — security group open to the internet on port 22
-# This should be caught and blocked by networking.rego
-resource "aws_security_group" "bad_example" {
-  name        = "bad-sg-open-ssh"
-  description = "Intentionally bad security group for demo"
-  vpc_id      = module.vpc.vpc_id
-
-  ingress {
-    description = "SSH open to the world - intentional violation"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-
-}
