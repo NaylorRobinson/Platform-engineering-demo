@@ -1,0 +1,12 @@
+{
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        "./python Scripts",
+        "-p",
+        "*test.py"
+    ],
+    "python.testing.pytestEnabled": false,
+    "python.testing.unittestEnabled": true,
+    "ansible.python.interpreterPath": "c:\\Users\\kwako\\AppData\\Local\\Microsoft\\WindowsApps\\python3.12.exe"
+}

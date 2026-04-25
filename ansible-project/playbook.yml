@@ -1,0 +1,37 @@
+# ═══════════════════════════════════════════════════════════════
+#  playbook.yml
+#  This Ansible playbook installs and starts NGINX on all
+#  three web servers listed in inventory.ini
+#
+#  A playbook is like a to-do list for your servers
+#  Ansible reads this file and executes each task
+#  on every server in the [webservers] group
+# ═══════════════════════════════════════════════════════════════
+
+---
+- name: Install and configure NGINX on web servers
+  hosts: webservers      # Run on all servers listed under [webservers] in inventory.ini
+  become: yes            # Run commands as sudo (admin) on the remote servers
+
+  tasks:
+
+    # Task 1 — Update the package list so we get the latest versions
+    # Like running apt-get update manually on each server
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    # Task 2 — Install NGINX on all three web servers
+    # state: present means "make sure it's installed"
+    - name: Install NGINX
+      apt:
+        name: nginx
+        state: present
+
+    # Task 3 — Make sure NGINX is actually running
+    # state: started means "start it if it isn't already running"
+    - name: Ensure NGINX is running
+      service:
+        name: nginx
+        state: started
+        enabled: yes     # Also makes NGINX start automatically if the server reboots
